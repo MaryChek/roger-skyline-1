@@ -1,0 +1,195 @@
+1. Download Debian ISO.
+2. Installation of VM
+	File -> Host Network Manager -> Create new (DHCP Enabled)
+	Choose '1 Adapter' -> NAT; '2 Adapter' -> vbox...
+	
+	While installation:
+		 choose '1 inet interface' (not virtual bridge)
+		 do partion (4.2 Gb)
+		do not choose Desktop or interfaces (only ssh and usual) //Shoud i choose Web-werv? IDK;
+	//sudo apt-get parted
+	sudo parted -s /dev/sda unit Gb print
+
+3. Nano /etc/nework/interfaces
+	add virtual bridge
+		allow-hotplug enp0s8
+		iface enp0s8 inet dhcp
+	
+	ifup enp0s8
+	restart networking service (VM)
+	ip a to check IP addrress
+4. Update system.
+5. Creation of sudo user
+	Start becoming superuser with su. Enter your root password.
+	Now, install sudo with apt-get install sudo.
+	Debian 10: add the user account to the group sudo with /sbin/adduser username sudo. Where username is your user account.
+	Now, log out and then log in with the same user.
+	Open a terminal and execute: sudo echo 'Hello, world!'. Enter your user password.
+	If all goes well you'll see on screen Hello, world!.
+6. How to setup static IP address
+	VBox -> File -> Host Network Manager -> Disable DHCP
+
+	Netmask \30
+	CIDR		Последний IP-адрес в подсети	Маска подсети	Количество адресов в подсети
+	a.b.c.d/30	0.0.0.3							255.255.255.252		42
+
+	sudo vim /etc/network/interfaces
+		iface enp0s8 inet static
+		address 192.168.42.1
+		netmask 255.255.255.252
+		gateway 192.168.42.3
+7. How to set up ssh
+	Changing port 22
+	sudo vim /etc/ssh/sshd_config
+	Choose port to listen (54221)
+	sudo systemctl restart sshd
+	sudo systemctl restart ssh
+	ssh lcharlin@192.168.42.1 -p 54221
+
+	On Mac ssh-keygen
+	ssh-copy-id lcharlin@192.168.42.1 -p 54221
+	
+	sudo vim /etc/ssh/sshd_config
+	PermitRootLogin no
+	PublickeyAuthentification yes
+	PasswordAuthentification no
+	sudo systemctl restart sshd
+	sudo systemctl restart ssh
+
+8. Installing FireWall
+	sudo apt-get install ufw -y
+	
+	sudo ufw default deny incoming
+	sudo ufw default allow outgoing
+	sudo ufw allow 54221/tcp			 // to enable ssh
+	sudo ufw enable 				// to start FireWall
+	sudo ufw status verbose			// to check status
+	sudo ufw allow 80				// for HTTP
+	sudo ufw allow 443				// for HTTPS
+
+	sudo ufw deny 22/tcp
+	
+	sudo ufw app list
+	sudo ufw desable
+	sudo ufw reset
+9. DOS attack protection
+	sudo vim /etc/ufw/before.rules
+
+	add near *filter
+
+	:ufw-http - [0:0]
+	:ufw-http-logdrop - [0:0]
+	
+	add before COMMIT
+
+### start ###
+# Enter rule
+-A ufw-before-input -p tcp --dport 80 -j ufw-http
+-A ufw-before-input -p tcp --dport 443 -j ufw-http
+
+# Limit connections per Class C
+-A ufw-http -p tcp --syn -m connlimit --connlimit-above 50 --connlimit-mask 24 -j ufw-http-logdrop
+
+# Limit connections per IP
+-A ufw-http -m state --state NEW -m recent --name conn_per_ip --set
+-A ufw-http -m state --state NEW -m recent --name conn_per_ip --update --seconds 10 --hitcount 20 -j ufw-http-logdrop
+
+# Limit packets per IP
+-A ufw-http -m recent --name pack_per_ip --set
+-A ufw-http -m recent --name pack_per_ip --update --seconds 1 --hitcount 20 -j ufw-http-logdrop
+
+# Finally accept
+-A ufw-http -j ACCEPT
+
+# Log
+-A ufw-http-logdrop -m limit --limit 3/min --limit-burst 10 -j LOG --log-prefix "[UFW HTTP DROP] "
+-A ufw-http-logdrop -j DROP
+### end ###
+
+With the above rules we are limiting the connections per IP at 20 connections / 10 seconds / IP and the packets to 20 packets / second / IP.
+
+	sudo ufw reload
+
+	added ping flood protection
+	-A INPUT -p icmp -m limit --limit 6/s --limit-burst 1 -j ACCEPT
+	-A INPUT -p icmp -j DROP
+
+10. Protection against scans on VM open ports
+
+	sudo apt-get install portsentry
+	vim +135 /etc/portsentry.conf
+		change 0 -> 1
+	vim /etc/default/portsentry
+		tcp -> atcp
+		udp -> audp
+	reboot
+
+	///to scan all ports
+	➜  ~ nmap -p 1-65535 -T4 -A -v -PE -PS22,25,80 -PA21,23,80 -Pn 192.168.42.1
+	You will be banned + you won't ping at all
+	All banned IP are in /etc/hosts.deny
+	It is reasnable to add some IP to /etc/portsentry ignore.static
+11. sudo service --status-all // show all services
+	
+	##############################################
+				apparmor
+	Apparmor – это система безопасности, которая не позволяет приложениям превращать зло.
+	 Например: если я запустил Firefox и нахожусь на плохом сайте, который пытается установить вредоносное ПО, которое удалит мою home папку, у Apparmor есть ограничения на Firefox, хотя он не позволяет делать что-либо, что я не хочу (например, доступ к моей музыке, документам и т. Д.), , Таким образом, даже если ваше приложение скомпрометировано, никакого вреда не может быть.
+
+	#############################################
+				console-setup.sh
+	настройка шрифта и раскладки клавиатуры для консоли
+	############################################
+				dbus
+	D-Bus — система межпроцессного взаимодействия, которая позволяет приложениям в операционной системе сообщаться друг с другом.
+	Should i stop it? IDK
+	#############################################
+				exim4
+	Exim (v4) — это агент пересылки почты. Данный пакет является метапакетом, зависящим от основных компонентов, необходимых для базовой установки exim4.
+	https://www.debian.org/releases/stretch/s390x/ch08s05.html.ru
+	############################################
+				hwclock
+	утилита для управления аппаратными часами
+	###########################################
+				kmod
+	утилиты управления модулями ядра Linux
+	Этот пакет содержит набор программ для загрузки, подключения и удаления модулей ядра Linux.
+	###########################################
+				procps
+	В пакете содержатся утилиты с экранным интерфейсом и интерфейсом командной строки для работы с /proc — псевдофайловой системой, динамически создаваемой ядром для предоставления информации о состоянии процессов (выполняется, остановлен, или «зомби»).
+	Этот пакет содержит следующие утилиты: free, kill, pkill, pgrep, pmap, ps, pwdx, skill, slabtop, snice, sysctl, tload, top, uptime, vmstat, w, watch.
+	##########################################
+				rsyslog
+	Rsyslog - это очень быстрый, расширяемый сервис для управления логами с огромным количеством возможностей. Среди его возможностей можно отметить поддержку фильтрации контента, а также передачу логов по сетям. Разработчики утверждают, что система очень быстрая, программа может обрабатывать до миллиона сообщений в секунду.
+
+	Вот основные возможности:
+
+	Многопоточность;
+	TCP, SSL, TLS, RELP;
+	Поддержка MySQL, PostgreSQL, Oracle;
+	Фильтрация журналов;
+	Полностью настраиваемый формат вывода.
+	##########################################
+	udev — менеджер устройств для новых версий ядра Linux, являющийся преемником devfs, hotplug и HAL. Его основная задача — обслуживание файлов устройств в каталоге /dev и обработка всех действий, выполняемых в пространстве пользователя при добавлении/отключении внешних устройств, включая загрузку firmware
+12.
+	apt-get install postfix -y // to install mail service {choose local}
+
+ #!/bin/bash
+
+echo "It is now $(date +%T) on $(date +"%d-%m-%Y")"
+(apt-get update -y && apt-get upgrade -y)
+echo ""
+
+0 4 * * 2 /var/log/update_script.log >> /home/lcharlin/my_scripts/update.sh
+@reboot
+13.
+	/// [[-z if string == NULL
+		find file -mmin -1440 //////if file was changed in 24 hours
+	#!/bin/bash
+
+	[[ -z $(find /etc/crontab -mmin -1440) ]]
+
+	if [ $? -ne 0 ]
+	then
+		echo -e "File has been changed"
+	fi

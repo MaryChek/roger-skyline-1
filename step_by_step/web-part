@@ -1,0 +1,74 @@
+1. sudo apt-get intall nginx -y
+	
+	sudo mkdir -p /var/www/init.lcharlin.com/html
+
+	sudo chown -R $USER:$USER /var/www/init.lcharlin.com/html/
+
+	sudo chmod -R 755 /var/www/init.lcharlin.com/
+
+	sudo vim /var/www/init.lcharlin.com/html/
+
+	sudo vim /var/www/init.lcharlin.com/html/index.html
+
+	sudo vim /etc/nginx/sites-available/init.lcharlin.com
+
+	sudo ln -s /etc/nginx/sites-available/init.lcharlin.com /etc/nginx/sites-enabled/
+
+	sudo nginx -t
+
+	sudo rm deafult /// sites-available + sites-enable
+
+	sudo sytemctl restart nginx
+		
+	Site is ready!
+2. to install SSL
+
+	sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/nginx.key -out /etc/nginx/nginx.crt
+
+	sudo openssl dhparam -out /etc/nginx/dhparam.pem 2048
+
+	sudo nano /etc/nginx/sites-enabled/default
+	//under root
+	/(раскомментировать listen 443 ssl default_server; и изменить server_name _; ssl_dhparam /etc/nginx/dhparam.pem;)\\
+	//(добавить ssl_certificate /etc/nginx/nginx.crt; ssl_certificate_key /etc/nginx/nginx.key; )\\
+	//DNS должен корректно указывать на наш сервер по всем именам, порты 80 и 443 должны быть открыты\\
+
+	sudo nginx -t
+
+	sudo service nginx reload
+
+	sudo apt-get update
+
+	sudo apt install python3-acme python3-certbot python3-mock python3-openssl python3-pkg-resources python3-pyparsing python3-zope.interface
+	
+	sudo apt install python3-certbot-nginx
+
+	sudo certbot --nginx
+
+	Open is Safari https Certificate trust/allow -> Keychain trust/allo
+
+3. Deploy part
+	apt-get install git
+
+VM	mkdir /var/repo/html.git
+	cd /html.git
+	git init --bare
+	cd hooks
+	vim post-receive
+	#!/bin/sh
+	git --work-tree=/var/www/html --git-dir=/var/repo/html.git checkout -f
+	sudo chmod +x post-receive
+	sudo chown -hR lcharlin /var/repo/html.git/
+	sudo chown -hR lcharlin /var/www/html/
+	exit
+
+MAC	mkdir roger_skyline
+	git init
+	git remote add live ssh://lcharlin@192.168.21.1:54221/var/repo/html.git
+	vim index.html /// Edit
+	git add .
+	git commit -m "lala"
+	git push live master
+###########################3
+	git log
+	git revert ///last commit////

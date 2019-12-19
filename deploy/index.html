@@ -1,0 +1,40 @@
+<html>
+
+<script type="text/javascript">
+	function getcat(){
+		var urlbase = "https://cataas.com/cat?";
+		var randnum= Math.floor(Math.random()*1000);
+		var urlimg = urlbase.concat(randnum.toString());
+		return urlimg;
+	}
+	</script>
+
+<body>
+	<div id="header">
+		<center><h1>>
+			<span style="font-family: 'Quicksand', sans-serif;" >Hello KOT!</span></a></h1></center>
+	</div>
+	<div id="body" >
+
+	   <center> <script type="text/javascript">
+			var img_url = getcat();
+			document.write('<img src=' + img_url + ' class="figure" alt="fun cat picture" title="Random cat pic">');
+		</script> </center>
+
+		</div>
+		<div id="footer">
+				<div style="text-align: center;">
+			<span style="text-align: center;">
+				<script type="text/javascript">
+				  var url=getcat();
+					</script>
+				<a href="https://192.168.21.1" class="myButton" color="FFFFFF">Randomize</a>
+				<a href="https://www.42.us.org/wp-content/themes/42/images/42_logo_black.svg"</a>
+			</span>
+			<p>
+			&copy; init.lcharlin.com
+			</p>
+		</div>
+	</div>
+</body>
+</html>
