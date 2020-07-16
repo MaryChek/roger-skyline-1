@@ -50,7 +50,7 @@
 3. Deploy part
 	apt-get install git
 
-VM	mkdir /var/repo/html.git
+VM	mkdir -p /var/repo/html.git
 	cd /html.git
 	git init --bare
 	cd hooks
