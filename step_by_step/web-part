@@ -6,8 +6,6 @@
 
 	sudo chmod -R 755 /var/www/init.lcharlin.com/
 
-	sudo vim /var/www/init.lcharlin.com/html/
-
 	sudo vim /var/www/init.lcharlin.com/html/index.html
 
 	sudo vim /etc/nginx/sites-available/init.lcharlin.com
