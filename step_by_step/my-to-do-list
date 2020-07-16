@@ -180,8 +180,8 @@ echo "It is now $(date +%T) on $(date +"%d-%m-%Y")"
 (apt-get update -y && apt-get upgrade -y)
 echo ""
 
-0 4 * * 2 /var/log/update_script.log >> /home/lcharlin/my_scripts/update.sh
-@reboot
+0 4 * * 2 /home/lcharlin/my_scripts/update.sh >> /var/log/update_script.log
+@reboot /home/lcharlin/my_scripts/update.sh >> /var/log/update_script.log
 13.
 	/// [[-z if string == NULL
 		find file -mmin -1440 //////if file was changed in 24 hours
