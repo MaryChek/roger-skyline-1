@@ -1,4 +1,4 @@
-1. sudo apt-get intall nginx -y
+1. sudo apt-get install nginx -y
 	
 	sudo mkdir -p /var/www/init.lcharlin.com/html
 
